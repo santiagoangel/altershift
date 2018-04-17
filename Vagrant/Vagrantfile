@@ -1,0 +1,49 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+# All Vagrant configuration is done below. The "2" in Vagrant.configure
+# configures the configuration version (we support older styles for
+# backwards compatibility). Please don't change it unless you know what
+# you're doing.
+
+
+Vagrant.configure('2') do |config|
+    config.vm.box = "fedora/27-atomic-host"
+    N = 6
+
+    (1..N).each do |machine_id|
+        vmdefine = "node#{machine_id}"
+        if machine_id < 4
+            vmdefine = "node#{machine_id}"
+        elsif  machine_id == 4
+            vmdefine = "master"
+        elsif  machine_id == 5
+            vmdefine = "drp"
+        else
+            vmdefine = "gluster"
+        end
+        
+        config.vm.define "#{vmdefine}" do |machine|
+            if machine_id < 4
+                machine.vm.hostname = "node#{machine_id}"
+            elsif  machine_id == 4
+                machine.vm.hostname = "master"
+            elsif  machine_id == 5
+                machine.vm.hostname = "drp"
+            else
+                machine.vm.hostname = "gluster"
+            end
+        
+            machine.vm.network "private_network", ip: "192.168.77.#{20+machine_id}"
+            machine.vm.network "public_network", :bridge => 'enp2s0', :dev => 'enp2s0'
+            machine.vm.provider :kvm do |kvm, override|
+                kvm.memory_size     = '2512m'
+            end
+
+            machine.vm.provider :libvirt do |libvirt, override|
+                libvirt.memory = 2512
+                libvirt.nested = true
+            end
+        end 
+    end
+end
